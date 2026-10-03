@@ -1,0 +1,15 @@
+{
+  "name": "@premortem/worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": { "start": "tsx src/index.ts" },
+  "dependencies": {
+    "@premortem/config": "workspace:*",
+    "@premortem/contracts": "workspace:*",
+    "@premortem/db": "workspace:*",
+    "@premortem/domain-registry": "workspace:*",
+    "@premortem/engine": "workspace:*",
+    "@premortem/evidence": "workspace:*"
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "name": "@premortem/domain-refunds",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "exports": { ".": "./src/index.ts" },
+  "dependencies": { "@premortem/contracts": "workspace:*", "zod": "4.6.5" }
+}

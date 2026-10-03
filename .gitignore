@@ -1,0 +1,15 @@
+# secretos y entorno
+.env
+.env.*
+!.env.example
+# supabase local
+supabase/.temp/
+supabase/.branches/
+# sistema
+.DS_Store
+node_modules/
+# node / next
+.next/
+dist/
+*.tsbuildinfo
+.vercel/

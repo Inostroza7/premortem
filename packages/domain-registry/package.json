@@ -1,0 +1,13 @@
+{
+  "name": "@premortem/domain-registry",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": { ".": "./src/index.ts" },
+  "dependencies": {
+    "@premortem/contracts": "workspace:*",
+    "@premortem/engine": "workspace:*",
+    "@premortem/domain-refunds": "workspace:*",
+    "@premortem/domain-calendar": "workspace:*"
+  }
+}

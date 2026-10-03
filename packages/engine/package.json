@@ -1,0 +1,8 @@
+{
+  "name": "@premortem/engine",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": { ".": "./src/index.ts" },
+  "dependencies": { "@premortem/contracts": "workspace:*", "@premortem/evidence": "workspace:*", "zod": "4.6.5" }
+}

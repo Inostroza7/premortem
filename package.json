@@ -1,0 +1,46 @@
+{
+  "name": "premortem",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.32.1",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @premortem/web dev",
+    "build": "pnpm --filter @premortem/web build",
+    "worker": "pnpm --filter @premortem/worker start",
+    "packs:register": "tsx scripts/register-packs.ts",
+    "domain:check": "tsx scripts/domain-check.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit && pnpm --filter @premortem/web typecheck",
+    "test": "vitest run tests/conformance packages",
+    "test:e2e": "tsx tests/e2e/run.ts",
+    "db:smoke": "scripts/db-smoke.sh",
+    "db:smoke:local": "scripts/db-smoke.sh --local",
+    "local:up": "scripts/local-up.sh",
+    "dev:local": "PREMORTEM_ENV=local pnpm --filter @premortem/web dev",
+    "worker:local": "PREMORTEM_ENV=local pnpm --filter @premortem/worker start",
+    "test:e2e:local": "PREMORTEM_ENV=local tsx tests/e2e/run.ts"
+  },
+  "devDependencies": {
+    "@types/node": "24.19.1",
+    "tsx": "4.23.15",
+    "typescript": "5.9.3",
+    "vitest": "5.0.3",
+    "@premortem/config": "workspace:*",
+    "@premortem/contracts": "workspace:*",
+    "@premortem/evidence": "workspace:*",
+    "@premortem/engine": "workspace:*",
+    "@premortem/db": "workspace:*",
+    "@premortem/domain-registry": "workspace:*",
+    "@premortem/domain-refunds": "workspace:*",
+    "@premortem/domain-calendar": "workspace:*",
+    "postgres": "3.4.9",
+    "@supabase/supabase-js": "2.117.2"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
+  }
+}

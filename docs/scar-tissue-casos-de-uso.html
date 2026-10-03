@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SCAR TISSUE Casos de Uso</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  /* Layout: página explicativa de una columna ancha (720px de texto), con un diagrama de tres pasos y tarjetas "antes / después"; tipografía grande y poco texto por bloque. */
+  :root {
+    --bg: #f3f4f6;
+    --paper: #ffffff;
+    --paper-2: #e8eaee;
+    --ink: #1b2430;
+    --muted: #5d6878;
+    --line: #d3d8e0;
+    --scar: #b9680a;
+    --scar-bg: #fff1dd;
+    --ok: #1f7a4c;
+    --ok-bg: #e1f3e8;
+    --bad: #b3261e;
+    --bad-bg: #fbe7e5;
+    --info: #2a5d9f;
+    --info-bg: #e4edf9;
+    --font-display: "Bricolage Grotesque", "Avenir Next", "Helvetica Neue", Arial, sans-serif;
+    --font-body: "Atkinson Hyperlegible", "Segoe UI", Roboto, sans-serif;
+    --font-mono: "IBM Plex Mono", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #12161c; --paper: #1a2029; --paper-2: #232b36; --ink: #e8ecf1; --muted: #9ba7b7; --line: #303a47;
+      --scar: #f0a73a; --scar-bg: #3a2a12; --ok: #5fcf95; --ok-bg: #16331f; --bad: #ff8a80; --bad-bg: #3c1c19; --info: #7fb0ea; --info-bg: #182a40;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #12161c; --paper: #1a2029; --paper-2: #232b36; --ink: #e8ecf1; --muted: #9ba7b7; --line: #303a47;
+    --scar: #f0a73a; --scar-bg: #3a2a12; --ok: #5fcf95; --ok-bg: #16331f; --bad: #ff8a80; --bad-bg: #3c1c19; --info: #7fb0ea; --info-bg: #182a40;
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  body { margin: 0; }
+  img { max-width: 100%; }
+  body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 18px; line-height: 1.55; padding-inline: 16px; padding-block: 0 72px; }
+  .wrap { max-width: 920px; margin: 0 auto; }
+  a { color: var(--info); text-underline-offset: 3px; }
+  a:focus-visible { outline: 2px solid var(--scar); outline-offset: 2px; }
+
+  h1, h2, h3 { font-family: var(--font-display); line-height: 1.1; margin: 0; text-wrap: balance; }
+  h1 { font-size: clamp(2.2rem, 6vw, 3.6rem); font-weight: 700; letter-spacing: -0.015em; }
+  h2 { font-size: clamp(1.6rem, 3.5vw, 2.2rem); font-weight: 700; margin-block: 64px 10px; }
+  h3 { font-size: 1.2rem; font-weight: 700; }
+  p { margin: 0 0 14px; max-width: 40em; }
+  .sub { color: var(--muted); font-size: 1.05rem; margin-bottom: 22px; }
+  code { font-family: var(--font-mono); font-size: 0.85em; background: var(--paper-2); padding: 1px 6px; border-radius: 4px; }
+
+  .eyebrow { font-family: var(--font-display); font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: var(--scar); }
+
+  /* Cabecera */
+  .top { padding-block: 44px 24px; border-bottom: 1px solid var(--line); }
+  .pitch { font-family: var(--font-display); font-weight: 600; font-size: clamp(1.2rem, 2.6vw, 1.5rem); color: var(--muted); margin: 10px 0 22px; }
+  .meta { display: flex; flex-wrap: wrap; gap: 8px 22px; font-size: 0.92rem; color: var(--muted); }
+  .meta b { color: var(--ink); font-weight: 700; }
+  .onesentence { margin-top: 26px; font-size: 1.22rem; max-width: 36em; }
+  .onesentence strong { background: var(--scar-bg); color: var(--ink); padding: 0 4px; border-radius: 3px; }
+
+  /* Tres pasos */
+  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin: 20px 0 10px; }
+  .step { background: var(--paper); border: 1px solid var(--line); padding: 18px 18px 16px; min-width: 0; position: relative; }
+  .step .n { font-family: var(--font-mono); font-size: 0.85rem; color: var(--scar); font-weight: 500; }
+  .step h3 { margin: 6px 0 8px; }
+  .step p { font-size: 1rem; margin: 0; color: var(--muted); }
+  .step p b { color: var(--ink); }
+  @media (max-width: 720px) { .steps { grid-template-columns: 1fr; } }
+
+  /* Franja de pago */
+  .pay { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 14px 0 0; }
+  .pay > div { background: var(--paper-2); border-left: 4px solid var(--scar); padding: 14px 16px; min-width: 0; font-size: 1rem; }
+  .pay b { font-family: var(--font-display); display: block; margin-bottom: 4px; }
+  .pay p { margin: 0; }
+  @media (max-width: 640px) { .pay { grid-template-columns: 1fr; } }
+
+  .tag { display: inline-block; font-family: var(--font-display); font-weight: 700; font-size: 0.74rem; letter-spacing: 0.05em; text-transform: uppercase; padding: 3px 9px; border-radius: 999px; white-space: nowrap; vertical-align: middle; }
+  .tag.scar { color: var(--scar); background: var(--scar-bg); }
+  .tag.ok { color: var(--ok); background: var(--ok-bg); }
+  .tag.bad { color: var(--bad); background: var(--bad-bg); }
+  .tag.info { color: var(--info); background: var(--info-bg); }
+  .tag.muted { color: var(--muted); background: var(--paper-2); }
+
+  /* Por qué importa */
+  .why { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 18px; }
+  .why > div { background: var(--paper); border-top: 4px solid var(--scar); padding: 16px 18px; min-width: 0; }
+  .why h3 { font-size: 1.1rem; margin-bottom: 6px; }
+  .why p { font-size: 1rem; margin: 0; color: var(--muted); }
+  @media (max-width: 720px) { .why { grid-template-columns: 1fr; } }
+
+  /* Casos */
+  .case { background: var(--paper); border: 1px solid var(--line); margin: 18px 0; }
+  .case .head { padding: 16px 20px 12px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 6px 14px; }
+  .case .head h3 { font-size: 1.3rem; }
+  .case .who { color: var(--muted); font-size: 1rem; padding: 0 20px 14px; margin: 0; }
+  .ab { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid var(--line); }
+  .ab > div { padding: 14px 20px 16px; min-width: 0; }
+  .ab > div + div { border-left: 1px solid var(--line); }
+  .ab .lbl { font-family: var(--font-display); font-weight: 700; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+  .ab .before .lbl { color: var(--bad); }
+  .ab .after .lbl { color: var(--ok); }
+  .ab ol { margin: 0; padding-left: 20px; font-size: 1rem; }
+  .ab li { margin-bottom: 5px; }
+  .ab li:last-child { margin-bottom: 0; }
+  .ab li b { font-weight: 700; }
+  @media (max-width: 640px) { .ab { grid-template-columns: 1fr; } .ab > div + div { border-left: 0; border-top: 1px solid var(--line); } }
+  .case .foot { border-top: 1px solid var(--line); background: var(--paper-2); padding: 12px 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px 20px; font-size: 0.96rem; }
+  .case .foot > div { min-width: 0; }
+  .case .foot b { font-family: var(--font-display); display: block; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 2px; }
+  @media (max-width: 640px) { .case .foot { grid-template-columns: 1fr; } }
+
+  /* Aprovechar e innovador */
+  .list { list-style: none; padding: 0; margin: 18px 0 0; max-width: 46em; }
+  .list li { display: grid; grid-template-columns: 2.6em 1fr; gap: 14px; padding: 14px 0; border-bottom: 1px solid var(--line); margin: 0; }
+  .list li:last-child { border-bottom: 0; }
+  .list .k { font-family: var(--font-mono); color: var(--scar); font-weight: 500; padding-top: 3px; }
+  .list b { font-family: var(--font-display); display: block; font-size: 1.1rem; margin-bottom: 2px; }
+  .list p { margin: 0; font-size: 1rem; color: var(--muted); max-width: none; }
+  .list p strong { color: var(--ink); }
+
+  .limits { background: var(--paper); border: 1px solid var(--line); padding: 18px 22px; margin-top: 18px; max-width: 46em; }
+  .limits ul { margin: 0; padding-left: 20px; font-size: 1rem; }
+  .limits li { margin-bottom: 6px; }
+  .limits li:last-child { margin-bottom: 0; }
+
+  .foot-note { margin-top: 56px; padding-top: 18px; border-top: 1px solid var(--line); color: var(--muted); font-size: 0.9rem; }
+  @media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="eyebrow">Propuesta · Hackathon “Build something agents want”</div>
+    <h1>SCAR TISSUE: casos de uso</h1>
+    <p class="pitch">One agent fails. The next one learns.</p>
+    <div class="meta">
+      <span>Versión <b>1.0</b></span>
+      <span>Fecha <b>03/10/2026</b></span>
+      <span>Clasificación <b>Pública · material de hackatón</b></span>
+      <span>Estado <b>Propuesta, no producto en producción</b></span>
+    </div>
+    <p class="onesentence">Un agente se topa con un error y encuentra la salida. SCAR TISSUE convierte esa experiencia en una <strong>cicatriz</strong>: una regla con pruebas, versión exacta y fecha de caducidad. Los demás agentes la consultan antes de repetir el mismo error. Las cicatrices curadas se venden con Stripe.</p>
+  </header>
+
+  <h2>Cómo funciona</h2>
+  <p class="sub">Tres pasos. El tercero es el que un agente ejecuta cada vez que va a escribir en un sistema ajeno.</p>
+
+  <div class="steps">
+    <div class="step">
+      <div class="n">Paso 1</div>
+      <h3>Un agente falla y se recupera</h3>
+      <p>El agente A llama a una herramienta, recibe un error y encuentra el camino alternativo. <b>Las dos trazas quedan guardadas.</b></p>
+    </div>
+    <div class="step">
+      <div class="n">Paso 2</div>
+      <h3>La cicatriz se verifica</h3>
+      <p>Un verificador independiente reproduce el fallo en una copia limpia, prueba la alternativa y la repite con un caso distinto. <b>Solo entonces se marca como verificada</b>, con fecha de caducidad.</p>
+    </div>
+    <div class="step">
+      <div class="n">Paso 3</div>
+      <h3>Otro agente pregunta antes de actuar</h3>
+      <p>El agente B envía proveedor, operación, versión y contexto. Si todo coincide, recibe la receta. <b>Si la versión es otra, no recibe nada.</b> Nunca adivina.</p>
+    </div>
+  </div>
+
+  <div class="pay">
+    <div>
+      <b>Si quien compra es una persona</b>
+      <p>Pulsa “Desbloquear por 1 USD” y paga en Stripe Checkout. El servidor confirma el pago por webhook y activa la licencia para todo su workspace. La página sola no puede activarla.</p>
+    </div>
+    <div>
+      <b>Si quien compra es un agente</b>
+      <p>Pide la receta, recibe una respuesta HTTP 402 con el precio, paga con una wallet de límite acotado y recibe receta más recibo. Es el Machine Payments Protocol de Stripe. <span class="tag muted">Extensión</span></p>
+    </div>
+  </div>
+  <p class="sub" style="margin-top:12px">Toda la demo corre en sandbox de Stripe. No hay cobros reales.</p>
+
+  <h2>Por qué importa</h2>
+  <div class="why">
+    <div>
+      <h3>Cada agente nuevo paga la misma matrícula</h3>
+      <p>Los agentes no recuerdan entre sesiones ni entre equipos. El mismo error de contrato se repite en cada instancia, cada día.</p>
+    </div>
+    <div>
+      <h3>Algunos errores cuestan dinero</h3>
+      <p>Un 422 cuesta una llamada. Un reintento mal hecho sobre un pago cuesta un reembolso duplicado. Esos son los errores que vale la pena no repetir.</p>
+    </div>
+    <div>
+      <h3>La documentación no registra cómo se falla</h3>
+      <p>Los docs dicen cómo debería funcionar una API. Nadie guarda, con pruebas, qué falló en la práctica y qué alternativa pasó.</p>
+    </div>
+  </div>
+
+  <h2>Casos de uso</h2>
+  <p class="sub">Cada caso muestra la misma tarea sin cicatriz y con cicatriz. Los nombres de proveedores de demo son ficticios; los de Stripe describen comportamiento documentado de su API.</p>
+
+  <article class="case">
+    <div class="head"><h3>1. El campo que cambió de versión</h3><span class="tag scar">Demo principal</span></div>
+    <p class="who">Agencia que conecta asistentes de soporte a un CRM. Cada asistente nuevo repite el mismo tropiezo.</p>
+    <div class="ab">
+      <div class="before">
+        <div class="lbl">Sin cicatriz</div>
+        <ol>
+          <li>Asignar <code>ticket_101</code> por email del responsable.</li>
+          <li>El CRM v2 responde <b>422</b>: ahora exige <code>owner_id</code>.</li>
+          <li>Buscar el usuario por email, obtener el ID, asignar de nuevo.</li>
+        </ol>
+      </div>
+      <div class="after">
+        <div class="lbl">Con cicatriz</div>
+        <ol>
+          <li>Consultar SCAR: CRM, operación <code>tickets.assign</code>, v2.</li>
+          <li>Receta: <b>resolver el ID por email y luego asignar</b>.</li>
+          <li>Asignar <code>ticket_202</code> a la primera. Sin el 422.</li>
+        </ol>
+      </div>
+    </div>
+    <div class="foot">
+      <div><b>Qué se verificó</b>El fallo reproduce en una copia limpia, la receta pasa, y pasa también con otro ticket y otro usuario.</div>
+      <div><b>Qué evita</b>Una llamada fallida por tarea, medida en las trazas. No se promete más que eso.</div>
+    </div>
+  </article>
+
+  <article class="case">
+    <div class="head"><h3>2. El reintento que duplica un reembolso</h3><span class="tag info">Stripe</span></div>
+    <p class="who">Equipo que opera un agente de soporte con permiso para reembolsar en Stripe. Es la cicatriz más cara de aprender a solas.</p>
+    <div class="ab">
+      <div class="before">
+        <div class="lbl">Sin cicatriz</div>
+        <ol>
+          <li>Crear un reembolso de 25 USD. La red se corta tras el commit.</li>
+          <li>El agente no recibe recibo y <b>reintenta con otra clave de idempotencia</b>.</li>
+          <li>Stripe acepta un segundo reembolso parcial. El cliente recibe 50 USD.</li>
+        </ol>
+      </div>
+      <div class="after">
+        <div class="lbl">Con cicatriz</div>
+        <ol>
+          <li>Consultar SCAR: Stripe, <code>refunds.create</code>, versión de API fijada.</li>
+          <li>Receta: <b>ante timeout, reutilizar la misma clave o consultar el estado antes de reintentar</b>.</li>
+          <li>Un solo reembolso de 25 USD, confirmado por lectura.</li>
+        </ol>
+      </div>
+    </div>
+    <div class="foot">
+      <div><b>Qué se verificó</b>En un simulador de pagos con pérdida de respuesta: la clave nueva produce dos efectos, la clave reutilizada produce uno. Caso reservado con otro pedido.</div>
+      <div><b>Qué evita</b>Dinero real. Stripe permite varios reembolsos parciales y un reembolso emitido no se deshace.</div>
+    </div>
+  </article>
+
+  <article class="case">
+    <div class="head"><h3>3. El precio que no existe en esta sandbox</h3><span class="tag info">Stripe</span></div>
+    <p class="who">Agente de desarrollo que despliega una tienda o un flujo de cobro y copia identificadores de un entorno a otro.</p>
+    <div class="ab">
+      <div class="before">
+        <div class="lbl">Sin cicatriz</div>
+        <ol>
+          <li>Crear una sesión de Checkout con un <code>price_…</code> tomado del código.</li>
+          <li>Stripe responde <b>“No such price”</b>: ese ID pertenece a otra sandbox o a modo live.</li>
+          <li>Crear otro precio a mano, parchear el código, repetir en el siguiente entorno.</li>
+        </ol>
+      </div>
+      <div class="after">
+        <div class="lbl">Con cicatriz</div>
+        <ol>
+          <li>Consultar SCAR: Stripe, <code>checkout.sessions.create</code>.</li>
+          <li>Receta: <b>resolver el precio por <code>lookup_key</code></b> en cada entorno; nunca fijar el ID en código.</li>
+          <li>La sesión se crea a la primera en cualquier sandbox.</li>
+        </ol>
+      </div>
+    </div>
+    <div class="foot">
+      <div><b>Qué se verificó</b>Con dos cuentas de prueba distintas: el ID fijo falla en la segunda, la búsqueda por clave funciona en ambas.</div>
+      <div><b>Qué evita</b>Horas de depuración repetidas por cada agente y cada entorno. Es el error más frecuente al automatizar Stripe.</div>
+    </div>
+  </article>
+
+  <article class="case">
+    <div class="head"><h3>4. El lote que se rechaza entero</h3><span class="tag muted">Fixture siguiente</span></div>
+    <p class="who">Equipo con importadores y agentes de ventas que sincronizan contactos con una plataforma comercial.</p>
+    <div class="ab">
+      <div class="before">
+        <div class="lbl">Sin cicatriz</div>
+        <ol>
+          <li>Enviar 120 contactos en una sola llamada.</li>
+          <li>La API acepta 50 por lote y <b>descarta los 120</b> con un 400 genérico.</li>
+          <li>Trocear, reenviar, y descubrir duplicados porque los emails no estaban normalizados.</li>
+        </ol>
+      </div>
+      <div class="after">
+        <div class="lbl">Con cicatriz</div>
+        <ol>
+          <li>Consultar SCAR: proveedor, <code>contacts.import</code>, versión.</li>
+          <li>Receta: <b>normalizar emails, deduplicar y enviar en lotes de 50</b>.</li>
+          <li>Importación limpia en una pasada.</li>
+        </ol>
+      </div>
+    </div>
+    <div class="foot">
+      <div><b>Qué se verificó</b>Reproducción de los duplicados tras normalizar y prueba de la receta en un fixture distinto.</div>
+      <div><b>Qué evita</b>Registros duplicados en el CRM del cliente, que son caros de limpiar después.</div>
+    </div>
+  </article>
+
+  <article class="case">
+    <div class="head"><h3>5. La cicatriz que no debe aplicarse</h3><span class="tag ok">Prueba de aislamiento</span></div>
+    <p class="who">Plataforma que opera agentes para muchos clientes. El riesgo aquí es aplicar la solución de un cliente o versión a otro.</p>
+    <div class="ab">
+      <div class="before">
+        <div class="lbl">Sin control de ámbito</div>
+        <ol>
+          <li>El agente recuerda “en este CRM hay que usar el ID”.</li>
+          <li>Lo aplica en la cuenta de otro cliente, que corre v3 y acepta email.</li>
+          <li>Hace llamadas de más o, peor, usa una regla privada de otro workspace.</li>
+        </ol>
+      </div>
+      <div class="after">
+        <div class="lbl">Con SCAR TISSUE</div>
+        <ol>
+          <li>La consulta exige proveedor, operación, versión y hash de contrato exactos.</li>
+          <li>v3 no coincide: respuesta <b>sin coincidencias</b>. Falta un dato: <b>pide contexto</b>.</li>
+          <li>Las cicatrices privadas de un workspace son invisibles para los demás.</li>
+        </ol>
+      </div>
+    </div>
+    <div class="foot">
+      <div><b>Qué se verificó</b>Pruebas de aislamiento entre tres workspaces y de rechazo por versión incompatible.</div>
+      <div><b>Qué evita</b>El fallo más peligroso de cualquier memoria compartida: aprender algo cierto y aplicarlo donde ya no lo es.</div>
+    </div>
+  </article>
+
+  <h2>Cómo se aprovecha</h2>
+  <ol class="list">
+    <li><span class="k">01</span><div><b>Biblioteca privada entre tus propios agentes</b><p>Todo lo que un agente del workspace aprende queda disponible para los demás sin coste. Es el valor inmediato para una agencia que opera varios asistentes sobre las mismas integraciones.</p></div></li>
+    <li><span class="k">02</span><div><b>Consulta previa desde el agente, por MCP</b><p>Antes de cada escritura en un sistema externo, el agente llama a <code>scar_preflight</code>. Si no hay coincidencia, sigue con su estrategia normal. <strong>Nunca se bloquea una tarea por falta de cicatrices.</strong></p></div></li>
+    <li><span class="k">03</span><div><b>Comprar recetas curadas por integración</b><p>El catálogo vende cicatrices verificadas por el equipo del producto a 1 USD por revisión y workspace. Una persona paga con Checkout; un agente, con MPP si la cuenta lo admite.</p></div></li>
+    <li><span class="k">04</span><div><b>Evidencia y caducidad para quien audita</b><p>Cada cicatriz dice qué se probó, en qué versión y hasta cuándo. Al vencer, deja de aplicarse sola y pide revalidación. Sirve como registro de pruebas para un sistema de gestión de seguridad.</p></div></li>
+  </ol>
+
+  <h2>Por qué es innovador</h2>
+  <ol class="list">
+    <li><span class="k">01</span><div><b>Conocimiento con pruebas, no consejos</b><p>Una cicatriz solo existe si el fallo se reprodujo, la alternativa pasó y pasó también en un caso reservado. Un reporte de agente, una explicación de un modelo o un voto no bastan.</p></div></li>
+    <li><span class="k">02</span><div><b>Ámbito exacto y fecha de caducidad</b><p>Las memorias de agentes actuales guardan texto y lo recuperan por parecido. Aquí la coincidencia es estructural: proveedor, operación, versión y contrato. Y toda verificación vence.</p></div></li>
+    <li><span class="k">03</span><div><b>Pensado para que lo use y lo pague un agente</b><p>El cliente técnico es otro agente. Consulta por API o MCP y puede pagar por HTTP 402 con un presupuesto acotado por su dueño. Es el caso de uso literal del Machine Payments Protocol.</p></div></li>
+    <li><span class="k">04</span><div><b>Métricas honestas</b><p>El producto informa “una llamada fallida menos en este par de ejecuciones” solo cuando las trazas lo demuestran. No hay porcentajes de ahorro inventados ni ventas de sandbox presentadas como ingresos.</p></div></li>
+  </ol>
+
+  <h2>Límites declarados</h2>
+  <div class="limits">
+    <ul>
+      <li>La verificación ocurre en simuladores. Una cicatriz sobre un proveedor real necesita un verificador y un sandbox para ese proveedor.</li>
+      <li>El catálogo inicial lo publica el equipo del producto con material sintético. No hay venta de datos aportados por clientes ni reparto a autores.</li>
+      <li>Los agentes de la demo son políticas de referencia, identificadas como tales. Un modelo puede proponer cicatrices; no puede certificarlas.</li>
+      <li>El canal de pago para agentes depende de que la cuenta de Stripe tenga habilitado MPP. Si no, la compra se hace con Checkout.</li>
+      <li>El precio de 1 USD es experimental. Sirve para validar la compra, no es un precio de mercado.</li>
+    </ul>
+  </div>
+
+  <footer class="foot-note">
+    <p>SCAR TISSUE · Propuesta para el hackathon “Build something agents want” · Versión 1.0 · 03/10/2026 · Clasificación: Pública, material de hackatón. Las menciones a Stripe describen comportamiento documentado de su API y no implican afiliación.</p>
+  </footer>
+
+</div>
+</body>
+</html>
