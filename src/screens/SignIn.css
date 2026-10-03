@@ -1,0 +1,141 @@
+.signin {
+  display: flex;
+  flex-wrap: wrap;
+  min-height: 100vh;
+}
+
+.signin-pitch,
+.signin-form {
+  flex: 1 1 420px;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 56px 64px;
+
+  @media (max-width: 640px) {
+    padding: 40px 16px;
+  }
+}
+
+.signin-pitch {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 48px;
+  background: var(--sidebar);
+  color: var(--sidebar-foreground);
+  box-shadow: inset -1px 0 0 0 var(--sidebar-border);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
+.brand-mark {
+  display: inline-flex;
+  width: 28px;
+  height: 28px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: var(--sidebar-primary);
+  color: var(--sidebar-primary-foreground);
+}
+
+.pitch {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 460px;
+
+  h1 {
+    margin: 0;
+    font-size: 36px;
+    line-height: 42px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+  p {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 16px;
+    line-height: 24px;
+  }
+  ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    color: var(--text-secondary);
+  }
+  li {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+  }
+  li > svg {
+    flex-shrink: 0;
+    margin-top: 2px;
+    color: var(--sidebar-primary);
+  }
+  b {
+    color: var(--foreground);
+  }
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.signin-form {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  form {
+    width: 100%;
+    max-width: 400px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+}
+
+.form-head {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  h2 {
+    margin: 0;
+    font-size: 24px;
+    line-height: 32px;
+    font-weight: 600;
+  }
+  p {
+    margin: 0;
+    color: var(--muted-foreground);
+  }
+}
+
+.or {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--muted-foreground);
+  font-size: 12px;
+}
+
+.fine {
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted-foreground);
+}
