@@ -4,7 +4,14 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>app</title>
+    <title>premortem</title>
+    <!-- ponytail: sigue al sistema; agregar toggle + localStorage cuando haga falta -->
+    <script>
+      const mq = matchMedia('(prefers-color-scheme: dark)')
+      const apply = () => document.documentElement.classList.toggle('dark', mq.matches)
+      apply()
+      mq.addEventListener('change', apply)
+    </script>
   </head>
   <body>
     <div id="root"></div>
