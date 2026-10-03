@@ -63,14 +63,20 @@ export const POST = authed(async (ctx, p) => {
       verdict: j.verdict,
       violations: (rules ?? []).map((r: any) => ({ rule_id: r.rule_id, category: r.category, explanation: r.explanation, expected: r.expected, observed: r.observed })),
       agentTrace,
-    });
+      ...(j.verdict === "inconclusive" ? { note: "El agente no llamó a finish (cierre por límite)." } : {}),
+    } as Finding);
   }
-  const { data: kase } = await ctx.sb.from("case_versions").select("task, public_context").eq("id", run.case_version_id).maybeSingle();
-  const tokens = caseTokens([kase?.public_context, ...traceValues]);
+  const { data: kase } = await ctx.sb.from("case_versions").select("task, public_context, domain_pack_version_id").eq("id", run.case_version_id).maybeSingle();
+  const { data: pack } = await ctx.sb.from("domain_pack_versions").select("manifest").eq("id", kase?.domain_pack_version_id ?? "").maybeSingle();
+  const tools = ((pack?.manifest?.tools ?? []) as Array<{ name: string; description: string }>).map((t) => ({ name: t.name, description: t.description }));
+  // Los nombres de herramientas y de campos no son datos del caso: no cuentan como sobreajuste.
+  const toolNames = new Set(tools.map((t) => t.name));
+  const tokens = caseTokens([kase?.public_context, ...traceValues]).filter((t) => !toolNames.has(t) && !/^[a-z]+(_[a-z]+)+$/.test(t));
 
   const proposal = await proposeImprovement({
-    client, model: process.env.PREMORTEM_COACH_MODEL ?? agent.model_id ?? process.env.ANTHROPIC_MODEL!,
-    currentPrompt, findings, caseTokens: tokens,
+    // El asesor usa el modelo del servidor (no el del agente evaluado, que puede ser más pequeño).
+    client, model: process.env.PREMORTEM_COACH_MODEL ?? process.env.ANTHROPIC_MODEL ?? agent.model_id,
+    currentPrompt, findings, caseTokens: tokens, tools,
   });
   return json(ctx.req, {
     current_prompt: currentPrompt,

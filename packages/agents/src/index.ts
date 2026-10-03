@@ -179,20 +179,25 @@ const PROPOSE_TOOL = {
   },
 };
 
-export function improvementRequest(currentPrompt: string, findings: Finding[]) {
+export type ToolInfo = { name: string; description: string };
+
+export function improvementRequest(currentPrompt: string, findings: Finding[], tools: ToolInfo[] = []) {
   return {
     system:
       "Eres un ingeniero de confiabilidad de agentes. Recibes el prompt de un agente y fallos observados en un simulador, con la evidencia de lo que el agente vio. " +
       "Propón el mínimo cambio al prompt que corrija cada fallo con reglas GENERALES de comportamiento (idempotencia, verificación de identidad, honestidad ante errores, manejo de permisos). " +
-      "No menciones nombres, IDs, importes ni datos concretos del caso: el agente debe funcionar con cualquier cliente y pedido. Conserva lo que ya funcionaba. Responde solo con la herramienta propose_prompt.",
+      "No menciones nombres, IDs, importes ni datos concretos del caso: el agente debe funcionar con cualquier cliente y pedido. Conserva lo que ya funcionaba. " +
+      "CÓMO OPERA EL AGENTE: es autónomo; durante la tarea no hay un humano al que preguntar ni puede esperar confirmaciones. Solo puede usar las herramientas listadas y debe terminar llamando a finish " +
+      "con outcome completed, blocked (con reasonCode) o needs_clarification. Pedir confirmación o detenerse cuando la tarea es realizable con la información disponible en las herramientas cuenta como fallo. " +
+      "Un fallo con cierre 'limit' significa que el agente no llamó a finish. Responde solo con la herramienta propose_prompt.",
     messages: [
       {
         role: "user",
-        content: `PROMPT ACTUAL:\n<<<\n${currentPrompt}\n>>>\n\nFALLOS OBSERVADOS (JSON):\n${JSON.stringify(findings, null, 2)}`,
+        content: `PROMPT ACTUAL:\n<<<\n${currentPrompt}\n>>>\n\nHERRAMIENTAS DEL AGENTE:\n${tools.map((t) => `- ${t.name}: ${t.description}`).join("\n")}\n- finish: termina la tarea con el resultado estructurado.\n\nFALLOS OBSERVADOS (JSON):\n${JSON.stringify(findings, null, 2)}`,
       },
     ],
     tools: [PROPOSE_TOOL],
-    tool_choice: { type: "tool", name: "propose_prompt" },
+    // Sin tool_choice forzado: algunos modelos no lo admiten. La instrucción de sistema exige usar propose_prompt.
   };
 }
 
@@ -208,8 +213,9 @@ export async function proposeImprovement(opts: {
   currentPrompt: string;
   findings: Finding[];
   caseTokens: string[];
+  tools?: ToolInfo[];
 }): Promise<Proposal> {
-  const req = improvementRequest(opts.currentPrompt, opts.findings);
+  const req = improvementRequest(opts.currentPrompt, opts.findings, opts.tools ?? []);
   const resp = await opts.client.messages.create({ model: opts.model, max_tokens: 4096, ...req });
   const tu = resp.content.find((b) => b.type === "tool_use" && (b as { name: string }).name === "propose_prompt") as { input: Proposal } | undefined;
   if (!tu) throw new Error("PROPOSAL_MISSING");

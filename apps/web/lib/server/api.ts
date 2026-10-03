@@ -80,6 +80,12 @@ function toErrorResponse(req: Request, e: unknown) {
     }
     return json(req, { error: { code: e.message, message: e.hint ?? e.message, detail: e.detail } }, status);
   }
+  const status = (e as { status?: unknown })?.status;
+  if (typeof status === "number" && (e as { constructor?: { name?: string } })?.constructor?.name?.endsWith("Error") && "error" in (e as object)) {
+    // Error del proveedor de modelos (Anthropic): se informa sin detalles internos ni credenciales.
+    console.error("model_provider_error", status);
+    return json(req, { error: { code: "MODEL_PROVIDER_ERROR", message: `El proveedor de modelos respondió ${status}` } }, 502);
+  }
   console.error("unhandled", e);
   return json(req, { error: { code: "INTERNAL", message: "Error interno" } }, 500);
 }
