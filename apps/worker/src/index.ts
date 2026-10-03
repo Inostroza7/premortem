@@ -3,7 +3,9 @@
 import { hostname } from "node:os";
 import { randomUUID } from "node:crypto";
 import { loadEnv, requireEnv } from "@premortem/config";
-import type { Json, JsonObject, Limits, MutationSpec } from "@premortem/contracts";
+import type { Json, JsonObject, Limits, MutationSpec, ReferencePolicy } from "@premortem/contracts";
+import { anthropicAgent, anthropicClientFromEnv } from "@premortem/agents";
+import { kekFromEnv, open as openBlob, unwrapDek } from "@premortem/crypto";
 import { connect, DbError, WorkerDb, type JobContext, type QueueMessage } from "@premortem/db";
 import { getPack } from "@premortem/domain-registry";
 import { ENGINE_VERSION, executeAttempt, type AttemptSink, type CommitRequest } from "@premortem/engine";
@@ -39,6 +41,37 @@ function genesis(msg: QueueMessage, attemptId: string) {
     publicPayload: { job_id: msg.job_id, run_id: msg.run_id, worker: WORKER_ID, engine_version: ENGINE_VERSION },
     privateBlobHash: null, prevHash: null,
   });
+}
+
+/** Selecciona el agente del job. El prompt se descifra solo en memoria y nunca se registra. */
+function selectAgent(agent: Record<string, any>, workspaceId: string, policies: Readonly<Record<string, ReferencePolicy>>): ReferencePolicy {
+  if (agent.driver === "reference") {
+    const p = policies[agent.policy_id];
+    if (!p) throw new Error(`POLICY_NOT_IN_PACK:${agent.policy_id}`);
+    return p;
+  }
+  if (agent.driver === "anthropic") {
+    const failing = (code: string): ReferencePolicy => ({ id: "unavailable", label: code, description: code, run: async () => { throw new Error(code); } });
+    const client = anthropicClientFromEnv();
+    if (!client) return failing("PROVIDER_NOT_CONFIGURED");   // termina como provider_error → inconcluso, unidad liberada
+    const pr = agent.prompt;
+    if (!pr || pr.purged) return failing("PROMPT_UNAVAILABLE");
+    let systemPrompt: string;
+    if (pr.encrypted) {
+      const kek = kekFromEnv();
+      const dek = unwrapDek(kek, workspaceId, pr.kek_id, Buffer.from(pr.wrapped_dek, "base64"));
+      systemPrompt = openBlob(dek, pr.key_id, { workspaceId, ownerKind: "agent_prompt", column: "prompt", resourceId: pr.payload_id }, Buffer.from(pr.blob_b64, "base64"));
+    } else {
+      systemPrompt = String(pr.content ?? "");
+    }
+    const cfg = (agent.config ?? {}) as Record<string, unknown>;
+    return anthropicAgent({
+      client, model: agent.model_id, systemPrompt,
+      ...(typeof cfg.temperature === "number" ? { temperature: cfg.temperature } : {}),
+      ...(typeof cfg.max_output_tokens === "number" ? { maxOutputTokens: cfg.max_output_tokens } : {}),
+    });
+  }
+  throw new Error(`DRIVER_NOT_AVAILABLE:${agent.driver}`);
 }
 
 async function processMessage(msg: QueueMessage): Promise<void> {
@@ -84,9 +117,7 @@ async function processMessage(msg: QueueMessage): Promise<void> {
     const pack = getPack(manifest.pack.pack_id, manifest.pack.version);
     if (!pack) throw new Error(`PACK_NOT_INSTALLED:${manifest.pack.pack_id}@${manifest.pack.version}`);
     const agent = inputs.agent as Record<string, any>;
-    if (agent.driver !== "reference") throw new Error(`DRIVER_NOT_AVAILABLE:${agent.driver}`);
-    const policy = pack.referencePolicies[agent.policy_id];
-    if (!policy) throw new Error(`POLICY_NOT_IN_PACK:${agent.policy_id}`);
+    const policy = selectAgent(agent, String(inputs.workspace_id), pack.referencePolicies);
 
     log("ejecutando", { job: msg.job_id, run: msg.run_id, pack: `${pack.ref.id}@${pack.ref.version}`, scenario: inputs.job.scenario_id, policy: policy.id });
     const result = await executeAttempt({

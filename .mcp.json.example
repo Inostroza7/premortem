@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "premortem": {
+      "command": "pnpm",
+      "args": ["--dir", ".", "-s", "mcp:local"],
+      "env": {
+        "PREMORTEM_API_URL": "http://localhost:3000",
+        "PREMORTEM_EMAIL": "${PREMORTEM_EMAIL}",
+        "PREMORTEM_PASSWORD": "${PREMORTEM_PASSWORD}"
+      }
+    }
+  }
+}

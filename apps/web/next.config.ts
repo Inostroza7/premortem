@@ -5,10 +5,15 @@ import type { NextConfig } from "next";
 // Mismo archivo de entorno que worker y scripts: PREMORTEM_ENV=local → .env.localdb; si no, .env.local de la raíz.
 const root = resolve(process.cwd(), "../..");
 config({ path: resolve(root, process.env.PREMORTEM_ENV === "local" ? ".env.localdb" : ".env.local"), override: false, quiet: true });
+if (process.env.PREMORTEM_ENV === "local") {
+  // Credenciales del proveedor de modelos compartidas desde .env.local (solo ANTHROPIC_*).
+  const shared = config({ path: resolve(root, ".env.local"), processEnv: {}, quiet: true }).parsed ?? {};
+  for (const [k, v] of Object.entries(shared)) if (k.startsWith("ANTHROPIC_") && v && !process.env[k]) process.env[k] = v;
+}
 
 const nextConfig: NextConfig = {
   transpilePackages: [
-    "@premortem/config", "@premortem/contracts", "@premortem/db", "@premortem/domain-registry",
+    "@premortem/agents", "@premortem/config", "@premortem/contracts", "@premortem/crypto", "@premortem/db", "@premortem/domain-registry",
     "@premortem/engine", "@premortem/evidence", "@premortem/domain-refunds", "@premortem/domain-calendar",
   ],
   serverExternalPackages: ["postgres"],

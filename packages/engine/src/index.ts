@@ -175,6 +175,8 @@ export async function executeAttempt(input: ExecuteInput): Promise<ExecuteResult
   let totalToolCalls = 0;
   let finalOutput: AgentFinal | null = null;
   let finished = false;
+  const pendingNotes: Array<{ type: string; payload: JsonObject }> = [];
+  const providerUsage: JsonObject = {};
 
   const ev = (type: string, audience: Audience, payload: JsonObject): WireEvent => {
     const w = buildEvent({
@@ -257,7 +259,8 @@ export async function executeAttempt(input: ExecuteInput): Promise<ExecuteResult
     if (totalToolCalls > input.limits.maxToolCalls) throw new LimitExceeded("maxToolCalls");
     logicalTime += 1;
     const callId = `call_${totalToolCalls}`;
-    const wire: WireEvent[] = [ev("tool.call", "agent", { tool: name, call_id: callId, arguments: args })];
+    const wire: WireEvent[] = pendingNotes.splice(0).map((n) => ev(n.type, "inspector", n.payload));
+    wire.push(ev("tool.call", "agent", { tool: name, call_id: callId, arguments: args }));
 
     const spec = toolSpecs.get(name);
     if (!spec) {
@@ -349,6 +352,7 @@ export async function executeAttempt(input: ExecuteInput): Promise<ExecuteResult
     }
     finalOutput = parsed.data;
     finished = true;
+    for (const n of pendingNotes.splice(0)) finalWire.push(ev(n.type, "inspector", n.payload));
     finalWire.push(ev("agent.finish", "agent", { final: parsed.data as unknown as Json }));
   };
 
@@ -363,6 +367,8 @@ export async function executeAttempt(input: ExecuteInput): Promise<ExecuteResult
       finish,
       limits: input.limits,
       signal: input.signal,
+      note: (type, payload) => { pendingNotes.push({ type: `agent.${type}`.slice(0, 80), payload }); },
+      reportUsage: (u) => { Object.assign(providerUsage, u); },
     });
     if (!finished) {
       termination = "limit";
@@ -371,9 +377,9 @@ export async function executeAttempt(input: ExecuteInput): Promise<ExecuteResult
   } catch (err) {
     if (finished) {
       // la política terminó y luego falló: el resultado final ya existe
-    } else if (err instanceof LimitExceeded) {
+    } else if (err instanceof LimitExceeded || (err instanceof Error && err.name === "LimitExceeded")) {
       termination = "limit";
-      terminationReason = err.which;
+      terminationReason = (err as { which?: string }).which ?? "limit";
     } else if (err instanceof SessionAborted) {
       termination = "cancelled";
       terminationReason = err.reason;
@@ -382,6 +388,7 @@ export async function executeAttempt(input: ExecuteInput): Promise<ExecuteResult
       terminationReason = err instanceof Error ? err.message.slice(0, 200) : "error";
     }
   }
+  for (const n of pendingNotes.splice(0)) finalWire.push(ev(n.type, "inspector", n.payload));
   if (termination !== "finished") {
     finalWire.push(ev("attempt.terminated", "system", { termination, reason: terminationReason }));
   }
@@ -416,7 +423,7 @@ export async function executeAttempt(input: ExecuteInput): Promise<ExecuteResult
     effects,
     events,
     finalState: state,
-    usage: { tool_calls: totalToolCalls, duration_ms: Date.now() - started, effects: effects.length },
+    usage: { tool_calls: totalToolCalls, duration_ms: Date.now() - started, effects: effects.length, ...providerUsage },
   };
 }
 

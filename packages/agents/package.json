@@ -1,0 +1,11 @@
+{
+  "name": "@premortem/agents",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": { ".": "./src/index.ts", "./scripted": "./src/scripted.ts" },
+  "dependencies": {
+    "@anthropic-ai/sdk": "0.131.0",
+    "@premortem/contracts": "workspace:*"
+  }
+}

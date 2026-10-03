@@ -63,6 +63,10 @@ export type AgentSession = {
   finish: (result: AgentFinal) => Promise<void>;
   limits: Limits;
   signal: AbortSignal;
+  /** Metadatos observables del adaptador (sin texto libre): modelo, tokens, stop_reason. Se anexan a la traza. */
+  note?: (type: string, payload: JsonObject) => void;
+  /** Uso acumulado del proveedor (tokens, respuestas). */
+  reportUsage?: (usage: JsonObject) => void;
 };
 
 export type ReferencePolicy = {
@@ -223,13 +227,21 @@ export const CreateRunBody = QuoteRunBody.extend({
   seed: z.number().int().min(0).max(2_147_483_647).default(1),
 }).strict();
 
-export const CreateAgentVersionBody = z
-  .object({
+export const CreateAgentVersionBody = z.discriminatedUnion("driver", [
+  z.object({
     label: z.string().min(1).max(120),
     driver: z.literal("reference"),
     policyId: z.string().min(1).max(80),
     config: z.record(z.string(), JsonValue).default({}),
-  })
-  .strict();
+  }).strict(),
+  z.object({
+    label: z.string().min(1).max(120),
+    driver: z.literal("anthropic"),
+    systemPrompt: z.string().min(1).max(20_000),
+    model: z.string().min(1).max(100).optional(),
+    parentAgentVersionId: z.string().uuid().optional(),
+    config: z.record(z.string(), JsonValue).default({}),
+  }).strict(),
+]);
 
 export type ApiError = { error: { code: string; message: string; detail?: string } };

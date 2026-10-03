@@ -142,10 +142,23 @@ export class ApiDb {
   }
 
   createAgentVersion(a: { workspaceId: string; userId: string; label: string; driver: string; driverVersion: string;
-    policyId: string | null; modelId: string | null; config: object; contentHashHex: string }) {
+    policyId: string | null; modelId: string | null; config: object; contentHashHex: string;
+    promptHmac?: Buffer | null; promptPayload?: object | null }) {
     const s = this.sql;
     return one<string>(s`select core.create_agent_version(${a.workspaceId}::uuid, ${a.userId}::uuid, ${a.label}, ${a.driver},
-      ${a.driverVersion}, ${a.policyId}, ${a.modelId}, ${s.json(a.config as never)}::jsonb, ${hex(a.contentHashHex)}::bytea) as r`);
+      ${a.driverVersion}, ${a.policyId}, ${a.modelId}, ${s.json(a.config as never)}::jsonb, ${hex(a.contentHashHex)}::bytea,
+      ${a.promptHmac ?? null}::bytea, ${a.promptPayload ? s.json(a.promptPayload as never) : null}::jsonb) as r`);
+  }
+
+  ensureDataKey(workspaceId: string, userId: string, kekId: string, wrappedDek: Buffer) {
+    return one<{ key_id: string; kek_id: string; wrapped_dek: string; created: boolean }>(
+      this.sql`select core.ensure_data_key(${workspaceId}::uuid, ${userId}::uuid, ${kekId}, ${wrappedDek}::bytea) as r`);
+  }
+
+  readAgentPrompt(agentVersionId: string, workspaceId: string, userId: string, purpose: string) {
+    return one<{ agent_version_id: string; prompt: null | { payload_id: string; encrypted: boolean; content: unknown; blob_b64: string | null;
+      key_id: string | null; kek_id: string | null; wrapped_dek: string | null; purged: boolean } }>(
+      this.sql`select core.read_agent_prompt(${agentVersionId}::uuid, ${workspaceId}::uuid, ${userId}::uuid, ${purpose}) as r`);
   }
 
   createCaseVersion(c: { workspaceId: string; userId: string; projectId: string; packVersionId: string; label: string;

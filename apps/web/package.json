@@ -22,7 +22,9 @@
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "zod": "4.6.5",
-    "server-only": "0.0.1"
+    "server-only": "0.0.1",
+    "@premortem/agents": "workspace:*",
+    "@premortem/crypto": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "24.19.1",

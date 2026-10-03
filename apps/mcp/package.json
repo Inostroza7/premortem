@@ -1,0 +1,13 @@
+{
+  "name": "@premortem/mcp",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": { "start": "tsx src/index.ts" },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.32.0",
+    "@premortem/config": "workspace:*",
+    "@supabase/supabase-js": "2.117.2",
+    "zod": "4.6.5"
+  }
+}

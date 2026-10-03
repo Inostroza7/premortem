@@ -20,7 +20,9 @@
     "local:up": "scripts/local-up.sh",
     "dev:local": "PREMORTEM_ENV=local pnpm --filter @premortem/web dev",
     "worker:local": "PREMORTEM_ENV=local pnpm --filter @premortem/worker start",
-    "test:e2e:local": "PREMORTEM_ENV=local tsx tests/e2e/run.ts"
+    "test:e2e:local": "PREMORTEM_ENV=local tsx tests/e2e/run.ts",
+    "mcp": "pnpm --silent --filter @premortem/mcp start",
+    "mcp:local": "PREMORTEM_ENV=local pnpm --silent --filter @premortem/mcp start"
   },
   "devDependencies": {
     "@types/node": "24.19.1",
@@ -36,7 +38,10 @@
     "@premortem/domain-refunds": "workspace:*",
     "@premortem/domain-calendar": "workspace:*",
     "postgres": "3.4.9",
-    "@supabase/supabase-js": "2.117.2"
+    "@supabase/supabase-js": "2.117.2",
+    "@premortem/agents": "workspace:*",
+    "@premortem/crypto": "workspace:*",
+    "@modelcontextprotocol/sdk": "1.32.0"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
