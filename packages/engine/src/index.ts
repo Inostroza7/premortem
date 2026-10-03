@@ -49,6 +49,7 @@ export function buildManifest(pack: DomainPack) {
     ),
     policies: Object.values(pack.referencePolicies).map((p) => ({ id: p.id, label: p.label, description: p.description })),
     fixtures: Object.fromEntries(pack.demoCases.map((c) => [c.fixtureVersion, hashJson(c.fixture)])),
+    ...(pack.environment && pack.environment !== "simulated" ? { environment: pack.environment } : {}),
   };
   return { manifest, contentHash: hashJson(manifest) };
 }
@@ -222,7 +223,20 @@ export async function executeAttempt(input: ExecuteInput): Promise<ExecuteResult
   };
 
   // ---- setup ----
-  const initialState = pack.initialize({ fixture: input.fixture, task: input.task, publicContext: input.publicContext });
+  let initialState: JsonObject;
+  try {
+    initialState = await pack.initialize({ fixture: input.fixture, task: input.task, publicContext: input.publicContext, attemptId: input.attemptId });
+  } catch (err) {
+    // El mundo no pudo prepararse (p. ej. el sandbox externo no respondió): inconcluso por proveedor, sin efectos.
+    const reason = err instanceof Error ? err.message.slice(0, 200) : "error";
+    const failEvents = [
+      ev("world.setup_failed", "system", { reason }),
+      ev("attempt.terminated", "system", { termination: "provider_error", reason }),
+    ];
+    const checks: CheckResult[] = pack.rules.map((r) => ({ ruleId: r.id, status: "not_evaluated", category: r.category, expected: {}, observed: {}, evidenceEventIds: [], explanation: "El mundo no pudo prepararse." }));
+    failEvents.push(ev("attempt.evaluated", "inspector", { verdict: "inconclusive", termination: "provider_error", rules: checks.map((c) => ({ rule_id: c.ruleId, status: c.status, category: c.category })) }));
+    return { termination: "provider_error", terminationReason: reason, finalOutput: null, checks, verdict: "inconclusive", finalEvents: failEvents, effects: [], events, finalState: {}, usage: { tool_calls: 0, duration_ms: Date.now() - started, effects: 0 } };
+  }
   let state: JsonObject = initialState;
   const setupEvents: WireEvent[] = [
     ev("world.initialized", "inspector", {
@@ -288,12 +302,13 @@ export async function executeAttempt(input: ExecuteInput): Promise<ExecuteResult
       }
     });
 
-    const t = pack.applyTool({
+    const t = await pack.applyTool({
       state: working,
       call: { callId, name, arguments: parsed.data },
       logicalOperationId: input.requestId,
       logicalTime,
       idNamespace: `${input.attemptId}:${logicalTime}`,
+      attemptId: input.attemptId,
     });
     let nextState = t.nextState;
 
@@ -393,6 +408,15 @@ export async function executeAttempt(input: ExecuteInput): Promise<ExecuteResult
     finalWire.push(ev("attempt.terminated", "system", { termination, reason: terminationReason }));
   }
 
+  if (pack.finalize) {
+    // Conciliación con la fuente de verdad externa (p. ej. lo que Stripe dice que se reembolsó).
+    try {
+      state = await pack.finalize({ state, attemptId: input.attemptId });
+      finalWire.push(ev("world.reconciled", "inspector", { source: pack.ref.id, truth: (state["external_truth"] ?? null) as Json }));
+    } catch (err) {
+      finalWire.push(ev("world.reconcile_failed", "system", { reason: err instanceof Error ? err.message.slice(0, 200) : "error" }));
+    }
+  }
   const checks = pack.evaluate({
     task: input.task,
     oracle: input.oracle,

@@ -85,9 +85,10 @@ async function main() {
   }
   console.log(`   ${email} · ${me.wallet.available_units} unidades`);
 
-  const kase = (await api("GET", "/api/cases")).cases.find((c: any) => c.domain_pack_versions.pack_id === "refunds");
+  const PACK = process.env.DEMO_PACK || "refunds";   // refunds (simulado) o refunds-stripe (Stripe modo prueba)
+  const kase = (await api("GET", "/api/cases")).cases.find((c: any) => c.domain_pack_versions.pack_id === PACK);
   const packs = (await api("GET", "/api/domain-packs")).domain_packs;
-  const scenarioIds = Object.keys(packs.find((p: any) => p.pack_id === "refunds").manifest.scenarios);
+  const scenarioIds = Object.keys(packs.find((p: any) => p.pack_id === PACK).manifest.scenarios);
   console.log(`   Caso: ${kase.label} · "${kase.task.instruction}"`);
 
   step(2, "Agente v1: prompt de soporte con instrucciones habituales");
@@ -126,6 +127,10 @@ async function main() {
   const ready = r2.worlds.every((w) => ["passed", "safe_stop"].includes(w.verdict)) && r2.worlds.every((w) => !w.rules.some((r: any) => r.status === "violation" && r.category !== "completion"));
   console.log(`\n   ${ready ? G + B + "v2: PRODUCTION READY en esta suite" : Y + B + "v2 aún no está lista: revisa los mundos en rojo"}${X}`);
 
+  if (PACK === "refunds-stripe") {
+    console.log(`\n${B}Stripe modo prueba · objetos reales de la versión 2${X}`);
+    for (const w of r2.worlds) for (const e of w.effects) console.log(`   ${SC[w.scenario]} #${w.repetition} · ${e.payload.stripe_refund_id} · ${(Number(e.payload.amount_cents) / 100).toFixed(2)} USD · https://dashboard.stripe.com/test/payments/${e.payload.stripe_payment_intent}`);
+  }
   const file = `${repoRoot}/docs/demo-runs/demo-${new Date().toISOString().replace(/[:.]/g, "-")}.json`;
   writeFileSync(file, JSON.stringify({ model: process.env.DEMO_MODEL || process.env.ANTHROPIC_MODEL, case: { label: kase.label, instruction: kase.task.instruction }, v1: { prompt: V1_PROMPT, ...r1 }, improvement: imp, v2: { prompt: v2Prompt, ...r2 }, compare: cmp }, null, 2));
   console.log(`${D}\n   Evidencia guardada en ${file.replace(repoRoot + "/", "")}${X}`);

@@ -24,7 +24,8 @@
     "zod": "4.6.5",
     "server-only": "0.0.1",
     "@premortem/agents": "workspace:*",
-    "@premortem/crypto": "workspace:*"
+    "@premortem/crypto": "workspace:*",
+    "@premortem/domain-refunds-stripe": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "24.19.1",

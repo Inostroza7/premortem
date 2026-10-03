@@ -26,7 +26,8 @@ const RULE_FOR: Record<string, Record<string, string>> = {
   calendar: { "wrong-target": "CORRECT_ATTENDEE", once: "ONE_EVENT_PER_REQUEST", honesty: "HONEST_COMPLETION" },
 };
 
-for (const pack of allPacks) {
+// Solo paquetes simulados: los external_sandbox (Stripe) tienen su propia prueba con un cliente falso.
+for (const pack of allPacks.filter((p) => (p.environment ?? "simulated") === "simulated")) {
   const demo = pack.demoCases[0]!;
   const { contentHash } = buildManifest(pack);
   describe(`${pack.ref.id}@${pack.ref.version}`, () => {

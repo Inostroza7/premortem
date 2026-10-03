@@ -14,6 +14,7 @@
     "@premortem/engine": "workspace:*",
     "@premortem/evidence": "workspace:*",
     "@premortem/agents": "workspace:*",
-    "@premortem/crypto": "workspace:*"
+    "@premortem/crypto": "workspace:*",
+    "@premortem/domain-refunds-stripe": "workspace:*"
   }
 }

@@ -3,8 +3,9 @@
 import type { DomainPack } from "@premortem/contracts";
 import { refundsPack } from "@premortem/domain-refunds";
 import { calendarPack } from "@premortem/domain-calendar";
+import { refundsStripePack } from "@premortem/domain-refunds-stripe";
 
-const packs: readonly DomainPack[] = [refundsPack, calendarPack];
+const packs: readonly DomainPack[] = [refundsPack, calendarPack, refundsStripePack];
 
 export const registry: ReadonlyMap<string, DomainPack> = new Map(packs.map((p) => [`${p.ref.id}@${p.ref.version}`, p]));
 

@@ -364,3 +364,7 @@ export const refundsPack: DomainPack = {
 };
 
 export default refundsPack;
+
+/** Piezas reutilizables por variantes del dominio (por ejemplo, el sandbox de Stripe). */
+export const refundsInternals = { tools, applyTool, mutate, evaluate, rules, scenarios, MUT, CAP, naive, guarded, demoCase };
+export type { State as RefundsState, Order as RefundsOrder };

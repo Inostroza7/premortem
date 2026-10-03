@@ -23,7 +23,8 @@
     "test:e2e:local": "PREMORTEM_ENV=local tsx tests/e2e/run.ts",
     "mcp": "pnpm --silent --filter @premortem/mcp start",
     "mcp:local": "PREMORTEM_ENV=local pnpm --silent --filter @premortem/mcp start",
-    "demo:live": "PREMORTEM_ENV=local tsx scripts/demo-live.ts"
+    "demo:live": "PREMORTEM_ENV=local tsx scripts/demo-live.ts",
+    "stripe:check": "tsx scripts/stripe-check.ts"
   },
   "devDependencies": {
     "@types/node": "24.19.1",
@@ -42,7 +43,9 @@
     "@supabase/supabase-js": "2.117.2",
     "@premortem/agents": "workspace:*",
     "@premortem/crypto": "workspace:*",
-    "@modelcontextprotocol/sdk": "1.32.0"
+    "@modelcontextprotocol/sdk": "1.32.0",
+    "@premortem/domain-refunds-stripe": "workspace:*",
+    "stripe": "23.0.0"
   },
   "pnpm": {
     "onlyBuiltDependencies": [

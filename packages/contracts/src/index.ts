@@ -172,14 +172,26 @@ export interface DomainPack {
   referencePolicies: Readonly<Record<string, ReferencePolicy>>;
   demoCases: readonly DemoCase[];
 
-  initialize(input: { fixture: JsonObject; task: JsonObject; publicContext: JsonObject }): JsonObject;
+  /**
+   * simulated (por defecto): métodos puros, sin red ni secretos.
+   * external_sandbox: las herramientas actúan sobre un sandbox externo real (por ejemplo Stripe en modo prueba);
+   * pueden ser asíncronas y el resultado no es determinista. Nunca producción.
+   */
+  environment?: "simulated" | "external_sandbox";
+  /** Variables de entorno del servidor sin las cuales el paquete no puede ejecutarse (la API rechaza el run antes de reservar). */
+  requiresEnv?: readonly string[];
+
+  initialize(input: { fixture: JsonObject; task: JsonObject; publicContext: JsonObject; attemptId?: string }): JsonObject | Promise<JsonObject>;
   applyTool(input: {
     state: JsonObject;
     call: ToolCall;
     logicalOperationId: string;
     logicalTime: number;
     idNamespace: string;
-  }): Transition;
+    attemptId?: string;
+  }): Transition | Promise<Transition>;
+  /** Solo external_sandbox: concilia el estado final con la fuente de verdad externa antes de evaluar. */
+  finalize?(input: { state: JsonObject; attemptId: string }): Promise<JsonObject>;
   mutate(input: { state: JsonObject; mutation: MutationSpec; logicalTime: number }): JsonObject;
   evaluate(input: {
     task: JsonObject;

@@ -1,0 +1,12 @@
+{
+  "name": "@premortem/domain-refunds-stripe",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "exports": { ".": "./src/index.ts" },
+  "dependencies": {
+    "@premortem/contracts": "workspace:*",
+    "@premortem/domain-refunds": "workspace:*",
+    "stripe": "23.0.0"
+  }
+}

@@ -14,7 +14,7 @@ if (process.env.PREMORTEM_ENV === "local") {
 const nextConfig: NextConfig = {
   transpilePackages: [
     "@premortem/agents", "@premortem/config", "@premortem/contracts", "@premortem/crypto", "@premortem/db", "@premortem/domain-registry",
-    "@premortem/engine", "@premortem/evidence", "@premortem/domain-refunds", "@premortem/domain-calendar",
+    "@premortem/engine", "@premortem/evidence", "@premortem/domain-refunds", "@premortem/domain-calendar", "@premortem/domain-refunds-stripe",
   ],
   serverExternalPackages: ["postgres"],
   poweredByHeader: false,

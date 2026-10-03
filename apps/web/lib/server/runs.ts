@@ -12,6 +12,8 @@ export async function assertRunnable(ctx: Ctx, caseVersionId: string, agentVersi
   const agent = must(a, "Versión de agente") as any;
   const pack = getPack(caseRow.domain_pack_versions.pack_id, caseRow.domain_pack_versions.version);
   if (!pack) throw new HttpError(409, "PACK_NOT_INSTALLED", "El paquete del caso no está instalado en este despliegue");
+  const missing = (pack.requiresEnv ?? []).filter((k) => !process.env[k]);
+  if (missing.length) throw new HttpError(409, "SANDBOX_NOT_CONFIGURED", `El entorno ${pack.ref.id} necesita ${missing.join(", ")} en el servidor`);
   if (agent.driver === "anthropic") {
     if (!process.env.ANTHROPIC_API_KEY) throw new HttpError(409, "DRIVER_NOT_AVAILABLE", "El driver anthropic necesita ANTHROPIC_API_KEY en el servidor");
     return;

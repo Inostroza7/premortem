@@ -137,8 +137,13 @@ type RouteArgs = { params: Promise<Params> };
 export function authed(handler: (ctx: Ctx, params: Params) => Promise<Response>) {
   return async (req: Request, args?: RouteArgs) => {
     try {
+      const params: Params = (args?.params ? await args.params : undefined) ?? {};
+      // IDs de ruta mal formados: 404 (no existe), nunca un error interno por el cast a uuid.
+      if (params.id !== undefined && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(params.id)) {
+        throw new HttpError(404, "NOT_FOUND", "Recurso no encontrado");
+      }
       const ctx = await resolveContext(req);
-      return await handler(ctx, args ? await args.params : {});
+      return await handler(ctx, params);
     } catch (e) {
       return toErrorResponse(req, e);
     }

@@ -68,7 +68,8 @@ async function main() {
     const me = await api(token, "GET", "/api/me");
     check(me.status === 200 && me.body.wallet.available_units === 8, "workspace personal con 8 unidades de prueba", me.body);
     const boot = await api(token, "POST", "/api/bootstrap");
-    check(boot.status === 201 && boot.body.created.cases.length === 2 && boot.body.created.agent_versions.length === 2, "bootstrap crea 2 casos y 2 agentes", boot.body);
+    const packsN = (await api(token, "GET", "/api/domain-packs")).body.domain_packs.length;
+    check(boot.status === 201 && boot.body.created.cases.length === packsN && boot.body.created.agent_versions.length === 2, `bootstrap crea ${packsN} casos y 2 agentes`, boot.body);
     const boot2 = await api(token, "POST", "/api/bootstrap");
     check(boot2.body.created.cases.length === 0, "bootstrap idempotente");
     const packs = await api(token, "GET", "/api/domain-packs");
@@ -136,13 +137,15 @@ async function main() {
   check(foreign.status === 404, "B no ve el run de A (404)");
   const foreignCancel = await api(users.B!, "POST", `/api/runs/${runsByUser.A![0]}/cancel`);
   check(foreignCancel.status === 404, "B no puede cancelar el run de A (404)", foreignCancel.body);
+  const badId = await api(users.B!, "GET", "/api/runs/no-es-un-uuid");
+  check(badId.status === 404, "ID mal formado → 404", badId.body);
   const foreignWs = await api(users.B!, "GET", "/api/me", undefined, { "X-Workspace-Id": randomUUID() });
   check(foreignWs.status === 404, "workspace ajeno en cabecera → 404");
 
   console.log("\nCancelación");
   const C = await signup("c");
   await api(C, "POST", "/api/bootstrap");
-  const kc = (await api(C, "GET", "/api/cases")).body.cases[0];
+  const kc = (await api(C, "GET", "/api/cases")).body.cases.find((c: any) => c.domain_pack_versions.pack_id === "refunds");
   const ac = (await api(C, "GET", "/api/agent-versions")).body.agent_versions[0];
   const rc = await api(C, "POST", "/api/runs", { caseVersionId: kc.id, agentVersionId: ac.id, scenarioIds: SCENARIOS });
   const cancel = await api(C, "POST", `/api/runs/${rc.body.run_id}/cancel`);
