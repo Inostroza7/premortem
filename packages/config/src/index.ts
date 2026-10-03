@@ -17,7 +17,7 @@ export function loadEnv(): string {
     const shared = resolve(repoRoot, ".env.local");
     if (target !== ".env.local" && existsSync(shared)) {
       for (const [k, v] of Object.entries(parse(readFileSync(shared)))) {
-        if (k.startsWith("ANTHROPIC_") && v && !process.env[k]) process.env[k] = v;
+        if ((k.startsWith("ANTHROPIC_") || k.startsWith("STRIPE_")) && v && !process.env[k]) process.env[k] = v;
       }
     }
     loaded = true;

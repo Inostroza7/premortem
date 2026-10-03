@@ -8,7 +8,7 @@ config({ path: resolve(root, process.env.PREMORTEM_ENV === "local" ? ".env.local
 if (process.env.PREMORTEM_ENV === "local") {
   // Credenciales del proveedor de modelos compartidas desde .env.local (solo ANTHROPIC_*).
   const shared = config({ path: resolve(root, ".env.local"), processEnv: {}, quiet: true }).parsed ?? {};
-  for (const [k, v] of Object.entries(shared)) if (k.startsWith("ANTHROPIC_") && v && !process.env[k]) process.env[k] = v;
+  for (const [k, v] of Object.entries(shared)) if ((k.startsWith("ANTHROPIC_") || k.startsWith("STRIPE_")) && v && !process.env[k]) process.env[k] = v;
 }
 
 const nextConfig: NextConfig = {
