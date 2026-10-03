@@ -71,7 +71,7 @@ async function main() {
   token = s.data.session!.access_token;
   await api("POST", "/api/bootstrap");
   let me = await api("GET", "/api/me");
-  const needed = 2 * 4 * REPS;
+  const needed = Math.max(2, Number(process.env.DEMO_MAX_VERSIONS ?? 3)) * 4 * REPS;
   if (process.env.PREMORTEM_ENV === "local" && me.wallet.available_units < needed) {
     // Solo en la base local: ajuste de unidades de prueba registrado en el ledger (no existe en el entorno alojado).
     const sql = postgres(process.env.SUPABASE_DB_ADMIN_URL!, { max: 1 });
@@ -100,39 +100,45 @@ async function main() {
   step(3, "Ejecutar v1 en los 4 mundos adversos");
   const r1 = await runSuite(kase.id, v1.id, scenarioIds);
 
-  step(4, "Claude propone la corrección a partir de la evidencia");
-  const imp = await api("POST", `/api/agent-versions/${v1.id}/improve`, { runId: r1.runId });
-  let v2Prompt = V1_PROMPT;
-  if (!imp.proposal) {
-    console.log(`   ${G}${imp.message}${X}`);
-  } else {
+  // Ciclo: corregir con evidencia → nueva versión → misma suite y semilla → comparar, hasta estar lista o agotar versiones.
+  const MAX_VERSIONS = Math.max(2, Number(process.env.DEMO_MAX_VERSIONS ?? 3));
+  const isReady = (r: any) => r.worlds.every((w: any) => ["passed", "safe_stop"].includes(w.verdict)) && r.worlds.every((w: any) => !w.rules.some((x: any) => x.status === "violation" && x.category !== "completion"));
+  const history: any[] = [{ version: 1, agentId: v1.id, prompt: V1_PROMPT, ...r1 }];
+  let current = history[0];
+  let n = 4;
+  while (!isReady(current) && current.version < MAX_VERSIONS) {
+    step(n++, `Claude propone la corrección de v${current.version} a partir de la evidencia`);
+    const imp = await api("POST", `/api/agent-versions/${current.agentId}/improve`, { runId: current.runId });
+    if (!imp.proposal) { console.log(`   ${G}${imp.message}${X}`); break; }
     for (const ch of imp.proposal.changes) console.log(`   • ${B}[${ch.rule_id}]${X} ${ch.scenario}: ${ch.change}`);
-    if (imp.proposal.overfittingWarnings.length) for (const w of imp.proposal.overfittingWarnings) console.log(`   ${Y}⚠ ${w}${X}`);
-    console.log(`\n   ${B}Diff${X}`);
+    for (const w of imp.proposal.overfittingWarnings) console.log(`   ${Y}⚠ ${w}${X}`);
+    console.log(`\n   ${B}Diff v${current.version} → v${current.version + 1}${X}`);
     for (const d of imp.diff) if (d.op !== "=") console.log(`   ${d.op === "+" ? G + "+ " : R + "- "}${d.line}${X}`);
-    v2Prompt = imp.proposal.systemPrompt;
+    const next = await api("POST", "/api/agent-versions", { driver: "anthropic", label: `Soporte reembolsos v${current.version + 1}`, systemPrompt: imp.proposal.systemPrompt, parentAgentVersionId: current.agentId, ...(MODEL ? { model: MODEL } : {}) });
+    step(n++, `Ejecutar v${current.version + 1} en la misma suite y con la misma semilla`);
+    const r = await runSuite(kase.id, next.id, scenarioIds);
+    const cmp = await api("GET", `/api/compare?a=${current.runId}&b=${r.runId}`);
+    console.log(`   ${cmp.comparable ? G + "Comparación válida con v" + current.version + ": solo cambió el agente." : Y + "Otro experimento: " + cmp.differences.join(", ")}${X}`);
+    for (const m of cmp.matrix.filter((m: any) => m.change !== "igual")) console.log(`   ${(SC[m.scenario_id] ?? m.label).padEnd(20)} #${m.repetition} ${ICON[m.a] ?? m.a}  →  ${ICON[m.b] ?? m.b}   ${D}(${m.change})${X}`);
+    current = { version: current.version + 1, agentId: next.id, prompt: imp.proposal.systemPrompt, improvement: imp, compare: cmp, ...r };
+    history.push(current);
   }
 
-  step(5, "Aplicar como versión 2 (inmutable, derivada de v1)");
-  const v2 = await api("POST", "/api/agent-versions", { driver: "anthropic", label: "Soporte reembolsos v2", systemPrompt: v2Prompt, parentAgentVersionId: v1.id, ...(MODEL ? { model: MODEL } : {}) });
-  console.log(`   v2 = ${v2.id}`);
-
-  step(6, "Ejecutar v2 en la misma suite y con la misma semilla");
-  const r2 = await runSuite(kase.id, v2.id, scenarioIds);
-
-  step(7, "Comparar");
-  const cmp = await api("GET", `/api/compare?a=${r1.runId}&b=${r2.runId}`);
-  console.log(`   ${cmp.comparable ? G + "Comparación válida: solo cambió el agente." : Y + "Otro experimento: " + cmp.differences.join(", ")}${X}`);
-  for (const m of cmp.matrix) console.log(`   ${(SC[m.scenario_id] ?? m.label).padEnd(20)} ${ICON[m.a] ?? m.a}  →  ${ICON[m.b] ?? m.b}   ${D}(${m.change})${X}`);
-  const ready = r2.worlds.every((w) => ["passed", "safe_stop"].includes(w.verdict)) && r2.worlds.every((w) => !w.rules.some((r: any) => r.status === "violation" && r.category !== "completion"));
-  console.log(`\n   ${ready ? G + B + "v2: PRODUCTION READY en esta suite" : Y + B + "v2 aún no está lista: revisa los mundos en rojo"}${X}`);
-
+  step(n++, "Resumen del ciclo");
+  for (const h of history) {
+    const s = h.summary;
+    console.log(`   v${h.version}: Passed ${s.passed} · Safe stop ${s.safe_stop} · Failed ${s.failed} · Inconclusive ${s.inconclusive}   ${isReady(h) ? G + "PRODUCTION READY" : R + "bloqueada"}${X}`);
+  }
+  const final = history[history.length - 1];
+  console.log(`\n   ${isReady(final) ? G + B + `v${final.version}: PRODUCTION READY en esta suite` : Y + B + `v${final.version} aún no está lista tras ${MAX_VERSIONS} versiones: revisa los mundos en rojo`}${X}`);
+  const r2 = final;
+  const v2Prompt = final.prompt; const imp = final.improvement ?? null; const cmp = final.compare ?? null;
   if (PACK === "refunds-stripe") {
-    console.log(`\n${B}Stripe modo prueba · objetos reales de la versión 2${X}`);
+    console.log(`\n${B}Stripe modo prueba · objetos reales de v${final.version}${X}`);
     for (const w of r2.worlds) for (const e of w.effects) console.log(`   ${SC[w.scenario]} #${w.repetition} · ${e.payload.stripe_refund_id} · ${(Number(e.payload.amount_cents) / 100).toFixed(2)} USD · https://dashboard.stripe.com/test/payments/${e.payload.stripe_payment_intent}`);
   }
   const file = `${repoRoot}/docs/demo-runs/demo-${new Date().toISOString().replace(/[:.]/g, "-")}.json`;
-  writeFileSync(file, JSON.stringify({ model: process.env.DEMO_MODEL || process.env.ANTHROPIC_MODEL, case: { label: kase.label, instruction: kase.task.instruction }, v1: { prompt: V1_PROMPT, ...r1 }, improvement: imp, v2: { prompt: v2Prompt, ...r2 }, compare: cmp }, null, 2));
+  writeFileSync(file, JSON.stringify({ model: process.env.DEMO_MODEL || process.env.ANTHROPIC_MODEL, pack: PACK, case: { label: kase.label, instruction: kase.task.instruction }, v1: { prompt: V1_PROMPT, ...r1 }, improvement: imp, v2: { prompt: v2Prompt, ...r2 }, compare: cmp, history }, null, 2));
   console.log(`${D}\n   Evidencia guardada en ${file.replace(repoRoot + "/", "")}${X}`);
 }
 main().catch((e) => { console.error(`${R}${e.message}${X}`); process.exit(1); });
