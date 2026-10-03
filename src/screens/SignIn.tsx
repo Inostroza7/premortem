@@ -22,7 +22,8 @@ function GithubIcon() {
 export default function SignIn() {
   function onSubmit(e: FormEvent) {
     e.preventDefault()
-    // ponytail: no auth yet — wire Supabase Auth + S01b (workspace created) when its ref lands
+    // ponytail: no auth yet — wire Supabase Auth here
+    location.hash = '#/workspace'
   }
 
   return (

@@ -26,26 +26,6 @@
   box-shadow: inset -1px 0 0 0 var(--sidebar-border);
 }
 
-.brand {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-}
-
-.brand-mark {
-  display: inline-flex;
-  width: 28px;
-  height: 28px;
-  align-items: center;
-  justify-content: center;
-  border-radius: 8px;
-  background: var(--sidebar-primary);
-  color: var(--sidebar-primary-foreground);
-}
-
 .pitch {
   display: flex;
   flex-direction: column;
