@@ -55,7 +55,7 @@ GET  /api/runs/:id/export      (bundle JSON verificable)
 | `POST /api/runs` | Crea el run, reserva unidades y encola. Acepta `Idempotency-Key` | 202, o 200 si reutiliza |
 | `GET /api/runs?limit=&before=` | Runs del proyecto, más recientes primero. `before` es un `created_at` para paginar | 200 |
 | `GET /api/runs/:id` | Run con contadores, manifiesto, límites y sus jobs | 200 |
-| `POST /api/runs/:id/cancel` | Cancela: los jobs en cola se liberan y los que corren se detienen en su siguiente llamada | 200 |
+| `POST /api/runs/:id/cancel` | Cancela: los jobs en cola se liberan al instante; los que corren se detienen en su siguiente llamada. La respuesta incluye `jobs_still_running`. El run pasa a `cancelled` de inmediato, pero sus jobs pueden tardar unos segundos en quedar terminales | 200 |
 | `GET /api/runs/:id/export` | Bundle JSON con eventos, efectos, reglas y verificación de cada cadena | 200 |
 | `GET /api/jobs/:id/attempts` | Intentos de un mundo. Hay más de uno si hubo recuperación | 200 |
 | `GET /api/attempts/:id` | Intento con `rule_results` y `effects` | 200 |
@@ -171,7 +171,7 @@ Los límites se acotan en el servidor a 20 llamadas, 180 s, 25 000 tokens y 12 r
 
 Dos opciones, ambas válidas:
 
-- **Sondeo:** `GET /api/runs/:id` cada 1 o 2 segundos hasta que `run.status` sea `completed` o `cancelled`.
+- **Sondeo:** `GET /api/runs/:id` cada 1 o 2 segundos hasta que `run.status` sea `completed`, o sea `cancelled` y ningún job siga en `queued` o `running`.
 - **Realtime:** suscripción privada al canal `run:{run_id}`. Solo reciben mensajes los miembros del workspace. Los mensajes solo traen identificadores. Al recibirlos, pide a la API lo que falte con `after_seq`.
 
 ```ts

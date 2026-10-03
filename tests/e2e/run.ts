@@ -38,7 +38,9 @@ async function waitRun(token: string, runId: string, timeoutMs = 120_000) {
   const t0 = Date.now();
   while (Date.now() - t0 < timeoutMs) {
     const r = await api(token, "GET", `/api/runs/${runId}`);
-    if (["completed", "cancelled"].includes(r.body?.run?.status)) return r.body;
+    // Un run cancelado puede tener jobs en curso que se cierran en su siguiente llamada: esperar a que todos sean terminales.
+    const allTerminal = (r.body?.jobs ?? []).every((j: any) => !["queued", "running"].includes(j.status));
+    if (r.body?.run?.status === "completed" || (r.body?.run?.status === "cancelled" && allTerminal)) return r.body;
     await new Promise((res) => setTimeout(res, 1000));
   }
   throw new Error(`run ${runId} no terminó en ${timeoutMs} ms`);
