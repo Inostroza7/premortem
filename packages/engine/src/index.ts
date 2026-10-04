@@ -233,7 +233,7 @@ export async function executeAttempt(input: ExecuteInput): Promise<ExecuteResult
       ev("world.setup_failed", "system", { reason }),
       ev("attempt.terminated", "system", { termination: "provider_error", reason }),
     ];
-    const checks: CheckResult[] = pack.rules.map((r) => ({ ruleId: r.id, status: "not_evaluated", category: r.category, expected: {}, observed: {}, evidenceEventIds: [], explanation: "El mundo no pudo prepararse." }));
+    const checks: CheckResult[] = pack.rules.map((r) => ({ ruleId: r.id, status: "not_evaluated", category: r.category, expected: {}, observed: {}, evidenceEventIds: [], explanation: "The world could not be set up." }));
     failEvents.push(ev("attempt.evaluated", "inspector", { verdict: "inconclusive", termination: "provider_error", rules: checks.map((c) => ({ rule_id: c.ruleId, status: c.status, category: c.category })) }));
     return { termination: "provider_error", terminationReason: reason, finalOutput: null, checks, verdict: "inconclusive", finalEvents: failEvents, effects: [], events, finalState: {}, usage: { tool_calls: 0, duration_ms: Date.now() - started, effects: 0 } };
   }
@@ -263,7 +263,7 @@ export async function executeAttempt(input: ExecuteInput): Promise<ExecuteResult
   const toolSpecs = new Map(pack.tools.map((t) => [t.name, t]));
   const assertActive = () => {
     if (input.signal.aborted) throw new SessionAborted(input.abortReason?.() ?? "aborted");
-    if (finished) throw new Error("FINISHED: el agente ya llamó a finish");
+    if (finished) throw new Error("FINISHED: the agent already called finish");
     if (Date.now() - started > input.limits.maxDurationMs) throw new LimitExceeded("maxDurationMs");
   };
 
@@ -278,13 +278,13 @@ export async function executeAttempt(input: ExecuteInput): Promise<ExecuteResult
 
     const spec = toolSpecs.get(name);
     if (!spec) {
-      const obs = errorResult("UNKNOWN_TOOL", `herramienta desconocida: ${name}`);
+      const obs = errorResult("UNKNOWN_TOOL", `unknown tool: ${name}`);
       wire.push(ev("tool.result", "agent", { tool: name, call_id: callId, result: obs as unknown as Json }));
       return commit(name, callId, args, state, wire, [], obs);
     }
     const parsed = spec.input.safeParse(args);
     if (!parsed.success) {
-      const obs = errorResult("INVALID_ARGUMENT", parsed.error.issues.map((i) => `${i.path.join(".") || "(raíz)"}: ${i.message}`).join("; "));
+      const obs = errorResult("INVALID_ARGUMENT", parsed.error.issues.map((i) => `${i.path.join(".") || "(root)"}: ${i.message}`).join("; "));
       wire.push(ev("tool.result", "agent", { tool: name, call_id: callId, result: obs as unknown as Json }));
       return commit(name, callId, args, state, wire, [], obs);
     }
@@ -342,7 +342,7 @@ export async function executeAttempt(input: ExecuteInput): Promise<ExecuteResult
               mutation: m.ref.id, tool: name, occurrence: effOcc,
               effect_ids: wireEffects.map((w) => w.effect_id), actual_result: t.result as unknown as Json,
             }));
-            observation = errorResult("TIMEOUT_UNKNOWN", "sin respuesta del proveedor; el resultado de la operación es desconocido", "unknown");
+            observation = errorResult("TIMEOUT_UNKNOWN", "no response from the provider; the outcome of the operation is unknown", "unknown");
           } else {
             nextState = pack.mutate({ state: nextState, mutation: m, logicalTime });
             wire.push(ev("world.mutation_applied", "inspector", { mutation: m.ref.id, version: m.ref.version, phase: "after_effect", tool: name, occurrence: effOcc, parameters: m.parameters }));

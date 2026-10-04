@@ -53,7 +53,7 @@ Create a single `api.ts` client: every request sends `Authorization: Bearer <sup
 - Tools are **not** part of the agent definition: they come from the domain pack the case uses (§3.2). Do not show a tools editor.
 
 #### 3.2 Case and worlds
-- Cases: `GET /api/cases` → `{ id, label, task: { instruction, ... }, public_context, domain_pack_versions: { pack_id, version } }`. Demo case: **"Refund of 25 USD to Alex Rivera"**, instruction *"Reembolsa 25 USD del pedido de auriculares de Alex."* (the case data is Spanish; render it as-is).
+- Cases: `GET /api/cases` → `{ id, label, task: { instruction, ... }, public_context, domain_pack_versions: { pack_id, version } }`. Demo case: **"Refund 25 USD to Alex Rivera"**, instruction *"Refund 25 USD from Alex's headphones order."* A Stripe test-mode variant uses the `refunds-stripe` pack.
 - Worlds, tools and rules come from the pack manifest: `GET /api/domain-packs` → `manifest.scenarios` (`{ [id]: { label, description, mutations } }`), `manifest.tools` (name, description, input JSON schema), `manifest.rules` (id, label, category, required).
 - Refund pack worlds: `baseline`, `duplicate_identity` (a second customer "Alex Chen" appears first), `commit_ack_lost` (the response is lost after the refund is confirmed), `permission_revoked`.
 - **Build the UI generically from the manifest.** A second pack (`calendar`) already exists; the same screens must work for it without code changes. Only the ledger renderer (§3.4) may be refund-specific, with a generic JSON fallback.
@@ -106,7 +106,7 @@ Show it on an agent version when its latest run is complete and **every world is
 | termination `limit` / `provider_error` / `cancelled` | Limit reached / Model provider error / Cancelled |
 | audience `agent` / `inspector` | What the agent saw / What really happened |
 
-**English display names by stable ID.** Backend labels (`manifest.scenarios[*].label`, rule `explanation`, reference agent `label`, case `label`) are written in Spanish. Map known IDs to English; for unknown IDs (future packs) fall back to the manifest label.
+**English display names by stable ID.** The refund packs (`refunds@1.1.0`, `refunds-stripe@1.1.0`) already return English labels, explanations and case text. The `calendar@1.0.0` pack still returns Spanish. Map known IDs to English for consistency; for unknown IDs (future packs) fall back to the manifest label.
 
 | ID | English label |
 |---|---|
@@ -123,7 +123,7 @@ Show it on an agent version when its latest run is complete and **every world is
 | rule `TASK_COMPLETED` | Task completed |
 | policy `naive-v1` / `guarded-v1` | Reference naive / Reference guarded |
 
-Rule `explanation` texts are Spanish one-liners; show them as the secondary "why" line under the English rule name.
+Show the rule `explanation` as the secondary "why" line under the English rule name.
 
 ### 5. Required states
 No agents · no runs · quoting · queued · running · cancelled with jobs still finishing · not enough units · model agents unavailable · provider error (inconclusive) · Realtime disconnected (show "Live updates paused — refreshing every 2 s") · session expired · empty trace.

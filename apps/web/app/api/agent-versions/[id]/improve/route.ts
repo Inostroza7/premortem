@@ -45,7 +45,7 @@ export const POST = authed(async (ctx, p) => {
   const failing = (jobs ?? []).filter((j: any) => j.verdict === "failed" || j.verdict === "inconclusive");
   const currentPrompt = (await readPrompt(ctx.workspaceId, ctx.userId, agent.id, "improve")) ?? "";
   if (failing.length === 0) {
-    return json(ctx.req, { current_prompt: currentPrompt, proposal: null, diff: [], based_on: { run_id: runId, failed_jobs: 0 }, message: "No hay fallos que corregir en este run." });
+    return json(ctx.req, { current_prompt: currentPrompt, proposal: null, diff: [], based_on: { run_id: runId, failed_jobs: 0 }, message: "No failures to fix in this run." });
   }
 
   const scenarios = run.manifest?.scenarios ?? {};
@@ -63,7 +63,7 @@ export const POST = authed(async (ctx, p) => {
       verdict: j.verdict,
       violations: (rules ?? []).map((r: any) => ({ rule_id: r.rule_id, category: r.category, explanation: r.explanation, expected: r.expected, observed: r.observed })),
       agentTrace,
-      ...(j.verdict === "inconclusive" ? { note: "El agente no llamó a finish (cierre por límite)." } : {}),
+      ...(j.verdict === "inconclusive" ? { note: "The agent never called finish (closed by limit)." } : {}),
     } as Finding);
   }
   const { data: kase } = await ctx.sb.from("case_versions").select("task, public_context, domain_pack_version_id").eq("id", run.case_version_id).maybeSingle();

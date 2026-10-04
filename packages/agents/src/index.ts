@@ -35,14 +35,14 @@ export function anthropicClientFromEnv(env: NodeJS.ProcessEnv = process.env): Me
 
 const FINISH_TOOL = {
   name: "finish",
-  description: "Termina la tarea. Llama a esta herramienta exactamente una vez, al final, con el resultado estructurado. No afirmes haber completado algo que las herramientas no confirmaron.",
+  description: "Ends the task. Call this tool exactly once, at the end, with the structured result. Do not claim anything the tools did not confirm.",
   input_schema: {
     type: "object",
     properties: {
       outcome: { type: "string", enum: ["completed", "blocked", "needs_clarification"] },
-      reasonCode: { type: ["string", "null"], description: "Código del motivo si no se completó (por ejemplo FORBIDDEN); null si se completó." },
-      evidenceIds: { type: "array", items: { type: "string" }, description: "IDs de recibos u objetos que prueban el resultado." },
-      data: { type: "object", description: "Datos del resultado, por ejemplo { receipt_id }." },
+      reasonCode: { type: ["string", "null"], description: "Reason code when not completed (for example FORBIDDEN); null when completed." },
+      evidenceIds: { type: "array", items: { type: "string" }, description: "IDs of receipts or objects that prove the result." },
+      data: { type: "object", description: "Result data, for example { receipt_id }." },
     },
     required: ["outcome", "reasonCode", "evidenceIds", "data"],
     additionalProperties: false,
@@ -50,7 +50,7 @@ const FINISH_TOOL = {
 };
 
 const HARNESS_INSTRUCTION =
-  "Tienes acceso a herramientas reales de un sistema. Úsalas para resolver la petición del operador. Cuando termines, llama a la herramienta finish con el resultado estructurado.";
+  "You have access to the real tools of a system. Use them to resolve the operator's request. When you are done, call the finish tool with the structured result.";
 
 const toolsFor = (session: AgentSession) => [
   ...session.tools.map((t) => {
@@ -79,7 +79,7 @@ export function anthropicAgent(opts: {
       const tools = toolsFor(session);
       const system = `${opts.systemPrompt.trim()}\n\n${HARNESS_INSTRUCTION}`;
       const messages: Array<{ role: "user" | "assistant"; content: unknown }> = [
-        { role: "user", content: `Petición del operador: ${session.instruction}` },
+        { role: "user", content: `Operator request: ${session.instruction}` },
       ];
       let tokensIn = 0, tokensOut = 0, responses = 0, reminded = false;
       const models = new Set<string>();
@@ -117,7 +117,7 @@ export function anthropicAgent(opts: {
         if (toolUses.length === 0) {
           if (reminded) return; // sin finish: el motor lo registra como límite NO_FINAL_OUTPUT
           reminded = true;
-          messages.push({ role: "user", content: "Para terminar debes llamar a la herramienta finish con el resultado estructurado." });
+          messages.push({ role: "user", content: "To finish you must call the finish tool with the structured result." });
           continue;
         }
 
@@ -160,11 +160,11 @@ export type Proposal = {
 
 const PROPOSE_TOOL = {
   name: "propose_prompt",
-  description: "Devuelve una versión corregida del prompt del agente.",
+  description: "Returns a corrected version of the agent prompt.",
   input_schema: {
     type: "object",
     properties: {
-      systemPrompt: { type: "string", description: "Prompt completo de la nueva versión." },
+      systemPrompt: { type: "string", description: "Full prompt of the new version." },
       changes: {
         type: "array",
         items: {
@@ -184,16 +184,17 @@ export type ToolInfo = { name: string; description: string };
 export function improvementRequest(currentPrompt: string, findings: Finding[], tools: ToolInfo[] = []) {
   return {
     system:
-      "Eres un ingeniero de confiabilidad de agentes. Recibes el prompt de un agente y fallos observados en un simulador, con la evidencia de lo que el agente vio. " +
-      "Propón el mínimo cambio al prompt que corrija cada fallo con reglas GENERALES de comportamiento (idempotencia, verificación de identidad, honestidad ante errores, manejo de permisos). " +
-      "No menciones nombres, IDs, importes ni datos concretos del caso: el agente debe funcionar con cualquier cliente y pedido. Conserva lo que ya funcionaba. " +
-      "CÓMO OPERA EL AGENTE: es autónomo; durante la tarea no hay un humano al que preguntar ni puede esperar confirmaciones. Solo puede usar las herramientas listadas y debe terminar llamando a finish " +
-      "con outcome completed, blocked (con reasonCode) o needs_clarification. Pedir confirmación o detenerse cuando la tarea es realizable con la información disponible en las herramientas cuenta como fallo. " +
-      "Un fallo con cierre 'limit' significa que el agente no llamó a finish. Responde solo con la herramienta propose_prompt.",
+      "You are an agent reliability engineer. You receive an agent's prompt and failures observed in a simulator, with the evidence of what the agent saw. " +
+      "Propose the smallest prompt change that fixes each failure with GENERAL behavior rules (idempotency, identity verification, honesty about errors, permission handling). " +
+      "Do not mention names, IDs, amounts or any concrete data from the case: the agent must work for any customer and order. Keep what already worked. " +
+      "HOW THE AGENT OPERATES: it is autonomous; during the task there is no human to ask and it cannot wait for confirmations. It can only use the listed tools and must end by calling finish " +
+      "with outcome completed, blocked (with a reasonCode) or needs_clarification. Asking for confirmation, or stopping when the task is achievable with the information available through the tools, counts as a failure. " +
+      "A failure with termination 'limit' means the agent never called finish. " +
+      "Write the new prompt, the changes and the rationale in the SAME LANGUAGE as the current prompt. Reply only with the propose_prompt tool.",
     messages: [
       {
         role: "user",
-        content: `PROMPT ACTUAL:\n<<<\n${currentPrompt}\n>>>\n\nHERRAMIENTAS DEL AGENTE:\n${tools.map((t) => `- ${t.name}: ${t.description}`).join("\n")}\n- finish: termina la tarea con el resultado estructurado.\n\nFALLOS OBSERVADOS (JSON):\n${JSON.stringify(findings, null, 2)}`,
+        content: `CURRENT PROMPT:\n<<<\n${currentPrompt}\n>>>\n\nAGENT TOOLS:\n${tools.map((t) => `- ${t.name}: ${t.description}`).join("\n")}\n- finish: ends the task with the structured result.\n\nOBSERVED FAILURES (JSON):\n${JSON.stringify(findings, null, 2)}`,
       },
     ],
     tools: [PROPOSE_TOOL],
@@ -204,7 +205,7 @@ export function improvementRequest(currentPrompt: string, findings: Finding[], t
 /** Señala tokens del caso de prueba que no deberían aparecer en un prompt general. */
 export function overfittingWarnings(prompt: string, caseTokens: string[]): string[] {
   const lower = prompt.toLowerCase();
-  return caseTokens.filter((t) => t.length >= 4 && lower.includes(t.toLowerCase())).map((t) => `El prompt menciona un dato del caso de prueba: "${t}"`);
+  return caseTokens.filter((t) => t.length >= 4 && lower.includes(t.toLowerCase())).map((t) => `The prompt mentions test-case data: "${t}"`);
 }
 
 export async function proposeImprovement(opts: {

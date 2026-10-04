@@ -141,6 +141,10 @@ export class ApiDb {
       ${s.json(manifest as never)}::jsonb, ${engineMinVersion}) as r`);
   }
 
+  retireOtherPackVersions(packId: string, keepVersion: string) {
+    return one<number>(this.sql`select core.retire_other_pack_versions(${packId}, ${keepVersion}) as r`);
+  }
+
   createAgentVersion(a: { workspaceId: string; userId: string; label: string; driver: string; driverVersion: string;
     policyId: string | null; modelId: string | null; config: object; contentHashHex: string;
     promptHmac?: Buffer | null; promptPayload?: object | null }) {

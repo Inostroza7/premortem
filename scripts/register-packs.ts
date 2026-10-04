@@ -14,7 +14,8 @@ try {
   for (const pack of allPacks) {
     const { manifest, contentHash } = buildManifest(pack);
     const id = await db.registerDomainPack(pack.ref.id, pack.ref.version, contentHash, manifest, ENGINE_VERSION);
-    console.log(`${pack.ref.id}@${pack.ref.version} → ${id} (hash ${contentHash.slice(0, 12)}…) [${envFile}]`);
+    const retired = await db.retireOtherPackVersions(pack.ref.id, pack.ref.version);
+    console.log(`${pack.ref.id}@${pack.ref.version} → ${id} (hash ${contentHash.slice(0, 12)}…)${retired ? ` · retired ${retired} older version(s)` : ""} [${envFile}]`);
   }
 } finally {
   await sql.end({ timeout: 5 });
